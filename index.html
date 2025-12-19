@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic Christmas - Blue Whales & Clouds</title>
+    <title>Magic Christmas - Final Fixed Zoom</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -67,18 +67,15 @@
         }
         #copyright { position: absolute; bottom: 10px; right: 15px; color: rgba(255, 255, 255, 0.3); font-size: 12px; z-index: 100; font-style: italic; }
 
-        /* --- HIỆU ỨNG CÁ VOI & MÂY (Đã sửa) --- */
+        /* CÁ VOI & MÂY */
         .sheep-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
-        /* Tăng kích thước mặc định lên 100px cho Cá Voi */
         .sheep { position: absolute; width: 100px; animation: floatSheep 8s ease-in-out infinite; }
         @keyframes floatSheep { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-35px) rotate(10deg); } }
-        
-        /* Vị trí bay của Cá & Mây */
-        .s1 { top: 10%; left: 8%; animation-delay: 0s; } /* Cá voi trái */
-        .s2 { top: 15%; right: 12%; width: 80px; animation-delay: 1s; } /* Mây phải */
-        .s3 { bottom: 20%; left: 10%; animation-delay: 2s; } /* Cá voi dưới trái */
-        .s4 { bottom: 15%; right: 15%; width: 80px; animation-delay: 1.5s; } /* Mây dưới phải */
-        .s5 { top: 45%; left: 5%; animation-delay: 0.5s; } /* Cá voi giữa */
+        .s1 { top: 10%; left: 8%; animation-delay: 0s; } 
+        .s2 { top: 15%; right: 12%; width: 80px; animation-delay: 1s; } 
+        .s3 { bottom: 20%; left: 10%; animation-delay: 2s; }
+        .s4 { bottom: 15%; right: 15%; width: 80px; animation-delay: 1.5s; } 
+        .s5 { top: 45%; left: 5%; animation-delay: 0.5s; }
     </style>
 </head>
 <body>
@@ -166,10 +163,8 @@
                 const tH = Math.random() * Math.PI * 2;
                 let hx = 16 * Math.pow(Math.sin(tH), 3);
                 let hy = 13 * Math.cos(tH) - 5 * Math.cos(2*tH) - 2 * Math.cos(3*tH) - Math.cos(4*tH);
-                const rFill = Math.pow(Math.random(), 0.3); 
-                hx *= rFill; hy *= rFill;
-                let hz = (Math.random() - 0.5) * 8 * rFill;
-                const scaleH = 2.2;
+                const rFill = Math.pow(Math.random(), 0.3); hx *= rFill; hy *= rFill;
+                let hz = (Math.random() - 0.5) * 8 * rFill; const scaleH = 2.2;
                 pHeartTargets.push(hx * scaleH, hy * scaleH + 5, hz);
                 pPositions.push(pTreeTargets[i*3], pTreeTargets[i*3+1], pTreeTargets[i*3+2]); phases.push(Math.random()*Math.PI*2);
             }
@@ -243,10 +238,7 @@
                     g.rotation.y = 0;
                     const s = 1 + Math.abs(Math.sin(time * 3)) * 0.15;
                     g.scale.set(s,s,s);
-                    for(let i=0; i<sizes.length; i++) {
-                         colors[i*3] = baseColor.r; colors[i*3+1] = baseColor.g; colors[i*3+2] = baseColor.b;
-                         sizes[i] = baseSize;
-                    }
+                    for(let i=0; i<sizes.length; i++) { colors[i*3] = baseColor.r; colors[i*3+1] = baseColor.g; colors[i*3+2] = baseColor.b; sizes[i] = baseSize; }
                 } else if(state === 'TREE') {
                     g.rotation.y += 0.003; g.scale.set(1,1,1);
                     for(let i=0; i<sizes.length; i++) {
@@ -274,21 +266,23 @@
             } else { 
                 titleMesh.visible = false; starMesh.visible = false; loveMesh.visible = false;
                 
-                // --- PHẦN LOGIC SỬA LỖI ZOOM ẢNH ---
+                // === KHU VỰC SỬA LỖI ZOOM ===
                 let bestIdx = 0; let maxZ = -999;
                 
                 photoMeshes.forEach((m, i) => {
                     m.visible = true;
                     if(state === 'EXPLODE') {
                         const angle = groupGold.rotation.y + i * (Math.PI*2/5);
-                        // Tính toán Z để biết ảnh nào gần nhất
-                        const currentZ = Math.cos(angle) * CONFIG.photoOrbitRadius;
-                        if(currentZ > maxZ) { maxZ = currentZ; bestIdx = i; }
+                        // Tính toán độ sâu Z để biết ảnh nào gần camera nhất
+                        const z = Math.cos(angle) * CONFIG.photoOrbitRadius;
+                        
+                        // Tìm ảnh có Z lớn nhất (gần nhất)
+                        if (z > maxZ) { maxZ = z; bestIdx = i; }
 
-                        m.position.lerp(new THREE.Vector3(Math.sin(angle)*25, Math.sin(time+i)*3, Math.cos(angle)*25), 0.1);
+                        m.position.lerp(new THREE.Vector3(Math.sin(angle)*25, Math.sin(time+i)*3, z), 0.1);
                         m.scale.lerp(new THREE.Vector3(0.6,0.6,0.6), 0.1);
                         m.lookAt(camera.position);
-                    } else { // PHOTO
+                    } else { // PHOTO MODE
                          if(i === selectedIndex) { m.position.lerp(new THREE.Vector3(0,0,60), 0.1); m.scale.lerp(new THREE.Vector3(5,5,5), 0.1); m.lookAt(camera.position); m.rotation.z = 0; }
                          else m.scale.lerp(new THREE.Vector3(0,0,0), 0.1);
                     }
@@ -316,15 +310,12 @@
 
             hands.onResults(results => {
                 ctx.clearRect(0,0,120,90); ctx.drawImage(results.image, 0, 0, 120, 90);
-                
-                // LOGIC NHẬN DIỆN CHÍNH XÁC (CẢ NGÓN TRỎ VÀ CÁI ĐỀU GẦN NHAU)
                 if (results.multiHandLandmarks.length === 2) {
                     const h1 = results.multiHandLandmarks[0], h2 = results.multiHandLandmarks[1];
                     const distIndex = Math.hypot(h1[8].x - h2[8].x, h1[8].y - h2[8].y);
                     const distThumb = Math.hypot(h1[4].x - h2[4].x, h1[4].y - h2[4].y);
                     if (distIndex < 0.15 && distThumb < 0.15) { state = 'HEART'; return; }
                 }
-
                 if(results.multiHandLandmarks.length > 0) {
                     const lm = results.multiHandLandmarks[0]; handX = lm[9].x;
                     let dist = 0; [8,12,16,20].forEach(i => dist += Math.hypot(lm[i].x-lm[0].x, lm[i].y-lm[0].y));
