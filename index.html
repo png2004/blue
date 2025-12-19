@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic Christmas - Final Fixed Zoom</title>
+    <title>Magic Christmas - Whales, Snow & Fixed Zoom</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -90,14 +90,14 @@
     <div id="ui-layer">
         <div id="magic-status">🎄 GIÁNG SINH AN LÀNH 🎄</div>
         <div class="guide">
-            🖐 <b>Xòe tay:</b> Mở quà | 🫶 <b>Heart:</b> hihi | ✊ <b>Nắm tay:</b> Cây thông
+            🖐 <b>Xòe tay:</b> Mở quà | 🫶 <b>Heart:</b> hihihi | ✊ <b>Nắm tay:</b> Cây thông
         </div>
     </div>
 
     <div id="welcome-letter">
         <div class="letter-content">
             <h2>Gửi [fuongw ^.^]! 🎄</h2>
-            <p>Hello fng nhá, vì đây chỉ là học mót nên sẽ đơn giản và không có gì đặc biệt cả  😭.</p>
+            <p>Hello fng nhá, vì đây chỉ là học mót nên sẽ đơn giản và không có gì đặc biệt cả  😭.</p>
             <p>Chúc fng ngày càng vui vẻ hơn và " Cười nhiều lên " nha.</p>
             <p>Giờ thì xòe bàn tay ra trước camera để nhận quà nhé!</p>
             <div class="signature">Thân, [fuong dep trai hihi!]</div>
@@ -115,13 +115,14 @@
         let bgMusic = new Audio(MUSIC_URL); bgMusic.loop = true; bgMusic.volume = 1.0;
 
         const loader = new THREE.TextureLoader();
-        const photoFiles = ['./image1.jpeg', './image2.jpeg', './image3.jpeg', './image4.jpeg', './image5.jpeg'];
+        const photoFiles = ['./image1.jpg', './image2.jpg', './image3.jpg', './image4.jpg', './image5.jpg'];
         const photoTextures = []; photoFiles.forEach((f, i) => photoTextures[i] = loader.load(f));
 
-        const CONFIG = { goldCount: 2000, redCount: 300, giftCount: 150, explodeRadius: 65, photoOrbitRadius: 25, treeHeight: 70, treeBaseRadius: 35 };
-        let scene, camera, renderer, groupGold, groupRed, groupGift, photoMeshes = [], titleMesh, starMesh, loveMesh;
+        const CONFIG = { goldCount: 2000, redCount: 300, giftCount: 150, explodeRadius: 65, photoOrbitRadius: 25, treeHeight: 70, treeBaseRadius: 35, snowCount: 800 };
+        let scene, camera, renderer, groupGold, groupRed, groupGift, groupSnow, photoMeshes = [], titleMesh, starMesh, loveMesh;
         let state = 'TREE', selectedIndex = 0, handX = 0.5;
 
+        // Tạo Texture cho hạt (Vàng, Đỏ, Quà, Tuyết)
         function createCustomTexture(type) {
             const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 128;
             const ctx = canvas.getContext('2d'); const cx = 64, cy = 64;
@@ -134,10 +135,14 @@
             } else if (type === 'gift_red') {
                 ctx.fillStyle = '#D32F2F'; ctx.fillRect(20, 20, 88, 88);
                 ctx.fillStyle = '#FFD700'; ctx.fillRect(54, 20, 20, 88); ctx.fillRect(20, 54, 88, 20);
+            } else if (type === 'snow') {
+                // Texture Tuyết trắng
+                const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 50);
+                grd.addColorStop(0, 'rgba(255, 255, 255, 0.9)'); grd.addColorStop(1, 'rgba(255, 255, 255, 0)'); ctx.fillStyle = grd; ctx.fillRect(0,0,128,128);
             }
             return new THREE.CanvasTexture(canvas);
         }
-        const textures = { gold: createCustomTexture('gold_glow'), red: createCustomTexture('red_light'), gift: createCustomTexture('gift_red') };
+        const textures = { gold: createCustomTexture('gold_glow'), red: createCustomTexture('red_light'), gift: createCustomTexture('gift_red'), snow: createCustomTexture('snow') };
 
         function init3D() {
             const container = document.getElementById('canvas-container');
@@ -145,10 +150,27 @@
             camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000); camera.position.z = 100;
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
             renderer.setSize(window.innerWidth, window.innerHeight); container.appendChild(renderer.domElement);
+            
+            // Tạo các nhóm hạt
             groupGold = createParticleSystem('gold', CONFIG.goldCount, 2.0);
             groupRed = createParticleSystem('red', CONFIG.redCount, 3.5); 
             groupGift = createParticleSystem('gift', CONFIG.giftCount, 3.0); 
+            createSnow(); // Tạo tuyết
+            
             createPhotos(); createDecorations(); animate();
+        }
+
+        // Tạo Tuyết Rơi
+        function createSnow() {
+            const geo = new THREE.BufferGeometry();
+            const pos = [];
+            for(let i=0; i<CONFIG.snowCount; i++) {
+                pos.push((Math.random()-0.5)*200, (Math.random()-0.5)*100, (Math.random()-0.5)*200);
+            }
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            const mat = new THREE.PointsMaterial({ size: 1.5, map: textures.snow, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+            groupSnow = new THREE.Points(geo, mat);
+            scene.add(groupSnow);
         }
 
         function createParticleSystem(type, count, size) {
@@ -214,6 +236,7 @@
         function animate() {
             requestAnimationFrame(animate);
             const time = Date.now() * 0.001;
+            
             const statusEl = document.getElementById('magic-status');
             if(statusEl) {
                 if(state === 'TREE') statusEl.innerText = "🎄 GIÁNG SINH AN LÀNH 🎄";
@@ -222,6 +245,18 @@
                 else if(state === 'PHOTO') statusEl.innerText = "📸 XEM ẢNH NÈ 📸";
             }
 
+            // --- ANIMATION TUYẾT RƠI ---
+            if(groupSnow) {
+                const positions = groupSnow.geometry.attributes.position.array;
+                for(let i=1; i<positions.length; i+=3) {
+                    positions[i] -= 0.2; // Tốc độ rơi
+                    if(positions[i] < -50) positions[i] = 50; // Reset khi chạm đáy
+                }
+                groupSnow.rotation.y += 0.001; // Xoay nhẹ cả bầu trời tuyết
+                groupSnow.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // Xử lý các nhóm hạt (Cây thông/Tim/Nổ)
             [groupGold, groupRed, groupGift].forEach(g => {
                 const pos = g.geometry.attributes.position.array;
                 const sizes = g.geometry.attributes.size.array;
@@ -266,20 +301,23 @@
             } else { 
                 titleMesh.visible = false; starMesh.visible = false; loveMesh.visible = false;
                 
-                // === KHU VỰC SỬA LỖI ZOOM ===
-                let bestIdx = 0; let maxZ = -999;
+                // === ZOOM FIX LOGIC (RADA DÒ TÌM) ===
+                const currentRotation = groupGold.rotation.y;
+                let bestIdx = 0; let maxZ = -Infinity;
                 
                 photoMeshes.forEach((m, i) => {
                     m.visible = true;
                     if(state === 'EXPLODE') {
-                        const angle = groupGold.rotation.y + i * (Math.PI*2/5);
-                        // Tính toán độ sâu Z để biết ảnh nào gần camera nhất
+                        // Tính góc thực tế của ảnh (cộng thêm góc xoay của nhóm)
+                        const angle = i * (Math.PI*2/5) + currentRotation;
+                        const x = Math.sin(angle) * CONFIG.photoOrbitRadius;
                         const z = Math.cos(angle) * CONFIG.photoOrbitRadius;
-                        
-                        // Tìm ảnh có Z lớn nhất (gần nhất)
+                        const y = Math.sin(time+i)*3;
+
+                        // Kiểm tra ảnh gần nhất (Z lớn nhất)
                         if (z > maxZ) { maxZ = z; bestIdx = i; }
 
-                        m.position.lerp(new THREE.Vector3(Math.sin(angle)*25, Math.sin(time+i)*3, z), 0.1);
+                        m.position.lerp(new THREE.Vector3(x, y, z), 0.1);
                         m.scale.lerp(new THREE.Vector3(0.6,0.6,0.6), 0.1);
                         m.lookAt(camera.position);
                     } else { // PHOTO MODE
@@ -287,8 +325,7 @@
                          else m.scale.lerp(new THREE.Vector3(0,0,0), 0.1);
                     }
                 });
-                
-                // Cập nhật selectedIndex liên tục khi đang xoay để chuẩn bị Zoom
+                // Cập nhật selectedIndex liên tục
                 if(state === 'EXPLODE') selectedIndex = bestIdx;
             }
             renderer.render(scene, camera);
