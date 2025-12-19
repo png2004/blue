@@ -67,17 +67,18 @@
         }
         #copyright { position: absolute; bottom: 10px; right: 15px; color: rgba(255, 255, 255, 0.3); font-size: 12px; z-index: 100; font-style: italic; }
 
-        /* HIỆU ỨNG CÁ VOI & MÂY (Vẫn dùng class cũ để giữ animation) */
+        /* --- HIỆU ỨNG CÁ VOI & MÂY (Đã sửa) --- */
         .sheep-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
-        .sheep { position: absolute; width: 100px; animation: floatSheep 8s ease-in-out infinite; } /* Tăng kích thước cá voi lên chút */
+        /* Tăng kích thước mặc định lên 100px cho Cá Voi */
+        .sheep { position: absolute; width: 100px; animation: floatSheep 8s ease-in-out infinite; }
         @keyframes floatSheep { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-35px) rotate(10deg); } }
         
-        /* Vị trí */
-        .s1 { top: 10%; left: 8%; animation-delay: 0s; } 
-        .s2 { top: 15%; right: 12%; width: 80px; animation-delay: 1s; } /* Mây nhỏ hơn */
-        .s3 { bottom: 20%; left: 10%; animation-delay: 2s; }
-        .s4 { bottom: 15%; right: 15%; width: 80px; animation-delay: 1.5s; } /* Mây */
-        .s5 { top: 45%; left: 5%; animation-delay: 0.5s; }
+        /* Vị trí bay của Cá & Mây */
+        .s1 { top: 10%; left: 8%; animation-delay: 0s; } /* Cá voi trái */
+        .s2 { top: 15%; right: 12%; width: 80px; animation-delay: 1s; } /* Mây phải */
+        .s3 { bottom: 20%; left: 10%; animation-delay: 2s; } /* Cá voi dưới trái */
+        .s4 { bottom: 15%; right: 15%; width: 80px; animation-delay: 1.5s; } /* Mây dưới phải */
+        .s5 { top: 45%; left: 5%; animation-delay: 0.5s; } /* Cá voi giữa */
     </style>
 </head>
 <body>
@@ -117,7 +118,7 @@
         let bgMusic = new Audio(MUSIC_URL); bgMusic.loop = true; bgMusic.volume = 1.0;
 
         const loader = new THREE.TextureLoader();
-        const photoFiles = ['./image1.jpeg', './image2.jpeg', './image3.jpeg', './image4.jpeg', './image5.jpeg'];
+        const photoFiles = ['./image1.jpg', './image2.jpg', './image3.jpg', './image4.jpg', './image5.jpg'];
         const photoTextures = []; photoFiles.forEach((f, i) => photoTextures[i] = loader.load(f));
 
         const CONFIG = { goldCount: 2000, redCount: 300, giftCount: 150, explodeRadius: 65, photoOrbitRadius: 25, treeHeight: 70, treeBaseRadius: 35 };
@@ -163,27 +164,21 @@
                 const phi = Math.acos(2*Math.random()-1); const lam = 2*Math.PI*Math.random();
                 pExplodeTargets.push(rad*Math.sin(phi)*Math.cos(lam), rad*Math.sin(phi)*Math.sin(lam), rad*Math.cos(phi));
                 const tH = Math.random() * Math.PI * 2;
-                
-                // LOGIC HÌNH TRÁI TIM ĐẦY ĐẶN
                 let hx = 16 * Math.pow(Math.sin(tH), 3);
                 let hy = 13 * Math.cos(tH) - 5 * Math.cos(2*tH) - 2 * Math.cos(3*tH) - Math.cos(4*tH);
-                
-                const rFill = Math.pow(Math.random(), 0.3); // Giữ nguyên thuật toán fill
+                const rFill = Math.pow(Math.random(), 0.3); 
                 hx *= rFill; hy *= rFill;
                 let hz = (Math.random() - 0.5) * 8 * rFill;
                 const scaleH = 2.2;
                 pHeartTargets.push(hx * scaleH, hy * scaleH + 5, hz);
-
                 pPositions.push(pTreeTargets[i*3], pTreeTargets[i*3+1], pTreeTargets[i*3+2]); phases.push(Math.random()*Math.PI*2);
             }
             const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pPositions, 3));
             geo.setAttribute('size', new THREE.Float32BufferAttribute(new Float32Array(count).fill(size), 1));
-            
             const colors = new Float32Array(count * 3);
             const baseColor = new THREE.Color(type === 'gold' ? 0xFFD700 : (type === 'red' ? 0xFF0000 : 0xFFFFFF));
             for(let i=0; i<count; i++) { colors[i*3] = baseColor.r; colors[i*3+1] = baseColor.g; colors[i*3+2] = baseColor.b; }
             geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
             geo.userData = { tree: pTreeTargets, explode: pExplodeTargets, heart: pHeartTargets, phases: phases, baseSize: size, baseColor: baseColor };
             const mat = new THREE.PointsMaterial({ size: size, map: textures[type], transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, vertexColors: true, sizeAttenuation: true });
             const points = new THREE.Points(geo, mat); scene.add(points); return points;
@@ -204,7 +199,6 @@
             titleMesh = new THREE.Mesh(new THREE.PlaneGeometry(60, 15), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true }));
             titleMesh.position.set(0, 50, 0); scene.add(titleMesh);
             
-            // NGÔI SAO CHUẨN
             const starCanvas = document.createElement('canvas'); starCanvas.width = 128; starCanvas.height = 128;
             const sCtx = starCanvas.getContext('2d'); sCtx.fillStyle = "#FFFF00"; sCtx.shadowColor="#FFF"; sCtx.shadowBlur=20; sCtx.beginPath();
             const cx = 64, cy = 64, outer = 50, inner = 20;
@@ -216,13 +210,8 @@
             starMesh = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(starCanvas), transparent: true, blending: THREE.AdditiveBlending }));
             starMesh.position.set(0, CONFIG.treeHeight/2 + 2, 0); scene.add(starMesh);
 
-            // TEXT TRÁI TIM (CÓ GLOW)
             const loveCanvas = document.createElement('canvas'); loveCanvas.width = 1024; loveCanvas.height = 256;
-            const lCtx = loveCanvas.getContext('2d'); 
-            lCtx.font = 'bold 120px "Segoe UI", sans-serif'; 
-            lCtx.fillStyle = '#FF69B4'; lCtx.textAlign = 'center'; 
-            lCtx.shadowColor = "#FF1493"; lCtx.shadowBlur = 40; 
-            lCtx.fillText(" fng4x6 ❤️", 512, 130);
+            const lCtx = loveCanvas.getContext('2d'); lCtx.font = 'bold 120px "Segoe UI", sans-serif'; lCtx.fillStyle = '#FF69B4'; lCtx.textAlign = 'center'; lCtx.shadowColor = "#FF1493"; lCtx.shadowBlur = 40; lCtx.fillText(" fng4x6 ❤️", 512, 130);
             loveMesh = new THREE.Mesh(new THREE.PlaneGeometry(70, 18), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(loveCanvas), transparent: true, blending: THREE.AdditiveBlending }));
             loveMesh.position.set(0, 0, 20); loveMesh.visible = false; scene.add(loveMesh);
         }
@@ -230,7 +219,6 @@
         function animate() {
             requestAnimationFrame(animate);
             const time = Date.now() * 0.001;
-            
             const statusEl = document.getElementById('magic-status');
             if(statusEl) {
                 if(state === 'TREE') statusEl.innerText = "🎄 GIÁNG SINH AN LÀNH 🎄";
@@ -243,28 +231,24 @@
                 const pos = g.geometry.attributes.position.array;
                 const sizes = g.geometry.attributes.size.array;
                 const colors = g.geometry.attributes.color.array;
+                const phases = g.geometry.userData.phases;
                 const baseSize = g.geometry.userData.baseSize;
                 const baseColor = g.geometry.userData.baseColor;
-                const phases = g.geometry.userData.phases;
-
                 const tar = (state === 'TREE') ? g.geometry.userData.tree : (state === 'HEART' ? g.geometry.userData.heart : g.geometry.userData.explode);
                 
                 for(let i=0; i<pos.length; i++) pos[i] += (tar[i] - pos[i]) * 0.08;
                 g.geometry.attributes.position.needsUpdate = true;
 
                 if(state === 'HEART') {
-                    // TRÁI TIM ĐẦY ĐẶN (BỎ BỘ LỌC)
                     g.rotation.y = 0;
-                    const beatScale = 1 + Math.abs(Math.sin(time * 3)) * 0.15;
-                    g.scale.set(beatScale, beatScale, beatScale);
-                    
+                    const s = 1 + Math.abs(Math.sin(time * 3)) * 0.15;
+                    g.scale.set(s,s,s);
                     for(let i=0; i<sizes.length; i++) {
                          colors[i*3] = baseColor.r; colors[i*3+1] = baseColor.g; colors[i*3+2] = baseColor.b;
-                         sizes[i] = baseSize; // HIỆN TẤT CẢ HẠT (FULL)
+                         sizes[i] = baseSize;
                     }
                 } else if(state === 'TREE') {
-                    g.rotation.y += 0.003;
-                    g.scale.set(1,1,1);
+                    g.rotation.y += 0.003; g.scale.set(1,1,1);
                     for(let i=0; i<sizes.length; i++) {
                         sizes[i] = baseSize;
                         let b = 1.0; 
@@ -273,15 +257,10 @@
                         colors[i*3] = baseColor.r * b; colors[i*3+1] = baseColor.g * b; colors[i*3+2] = baseColor.b * b;
                     }
                 } else { 
-                    g.scale.set(1,1,1);
-                    g.rotation.y += ((handX - 0.5)*4 - g.rotation.y)*0.1;
-                    for(let i=0; i<sizes.length; i++) {
-                        sizes[i] = baseSize;
-                        colors[i*3] = baseColor.r; colors[i*3+1] = baseColor.g; colors[i*3+2] = baseColor.b;
-                    }
+                    g.scale.set(1,1,1); g.rotation.y += ((handX - 0.5)*4 - g.rotation.y)*0.1;
+                    for(let i=0; i<sizes.length; i++) { sizes[i] = baseSize; colors[i*3] = baseColor.r; colors[i*3+1] = baseColor.g; colors[i*3+2] = baseColor.b; }
                 }
-                g.geometry.attributes.size.needsUpdate = true;
-                g.geometry.attributes.color.needsUpdate = true;
+                g.geometry.attributes.size.needsUpdate = true; g.geometry.attributes.color.needsUpdate = true;
             });
 
             if(state === 'TREE') { 
@@ -294,18 +273,29 @@
                 const s = 1 + Math.abs(Math.sin(time*3))*0.1; loveMesh.scale.set(s,s,1);
             } else { 
                 titleMesh.visible = false; starMesh.visible = false; loveMesh.visible = false;
+                
+                // --- PHẦN LOGIC SỬA LỖI ZOOM ẢNH ---
+                let bestIdx = 0; let maxZ = -999;
+                
                 photoMeshes.forEach((m, i) => {
                     m.visible = true;
                     if(state === 'EXPLODE') {
                         const angle = groupGold.rotation.y + i * (Math.PI*2/5);
+                        // Tính toán Z để biết ảnh nào gần nhất
+                        const currentZ = Math.cos(angle) * CONFIG.photoOrbitRadius;
+                        if(currentZ > maxZ) { maxZ = currentZ; bestIdx = i; }
+
                         m.position.lerp(new THREE.Vector3(Math.sin(angle)*25, Math.sin(time+i)*3, Math.cos(angle)*25), 0.1);
                         m.scale.lerp(new THREE.Vector3(0.6,0.6,0.6), 0.1);
                         m.lookAt(camera.position);
-                    } else { 
+                    } else { // PHOTO
                          if(i === selectedIndex) { m.position.lerp(new THREE.Vector3(0,0,60), 0.1); m.scale.lerp(new THREE.Vector3(5,5,5), 0.1); m.lookAt(camera.position); m.rotation.z = 0; }
                          else m.scale.lerp(new THREE.Vector3(0,0,0), 0.1);
                     }
                 });
+                
+                // Cập nhật selectedIndex liên tục khi đang xoay để chuẩn bị Zoom
+                if(state === 'EXPLODE') selectedIndex = bestIdx;
             }
             renderer.render(scene, camera);
         }
